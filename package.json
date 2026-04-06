@@ -1,0 +1,28 @@
+{
+  "name": "personal-portfolio-3d",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.102.1",
+    "@react-three/fiber": "^8.16.2",
+    "framer-motion": "^11.0.24",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "three": "^0.162.0",
+    "lucide-react": "^0.364.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "vite": "^5.2.0"
+  }
+}
