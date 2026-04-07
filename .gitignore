@@ -1,9 +1,7 @@
 node_modules/
 dist/
 .env
-*.glb
-pc_original.glb
-pc_backup.glb
+
 .wrangler/
 wrangler.json
 wrangler.jsonc

@@ -13,8 +13,8 @@ export const HOTSPOT_POSITIONS = {
 };
 
 function Model() {
-  // Final, CORS-optimized 3D model URL (Infinite Bandwidth)
-  const { scene } = useGLTF('https://storage.googleapis.com/ritvik-portfolio-assets/pc.glb');
+  // Loading the highly compressed local 11MB model (Cloudflare Pages compatible)
+  const { scene } = useGLTF('./pc.glb');
   return (
     <Center position={[0, -1, 0]}>
       <primitive object={scene} scale={1} />
