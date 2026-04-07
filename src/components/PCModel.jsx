@@ -13,7 +13,8 @@ export const HOTSPOT_POSITIONS = {
 };
 
 function Model() {
-  const { scene } = useGLTF('/pc.glb');
+  // Loading 66MB model from CDN (Infinite Bandwidth)
+  const { scene } = useGLTF('https://pub-2f95431697204481b498f3b25e14304b.r2.dev/pc.glb');
   return (
     <Center position={[0, -1, 0]}>
       <primitive object={scene} scale={1} />
