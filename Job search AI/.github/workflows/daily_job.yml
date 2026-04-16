@@ -1,0 +1,30 @@
+name: Daily Job Hunter
+on:
+  schedule:
+    - cron: '0 9 * * *' # 9 AM UTC is 10 AM London time
+  workflow_dispatch: # Allows you to run it manually from the GitHub UI
+
+jobs:
+  run-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Daily Job
+        run: npx tsx daily_job.ts
+        env:
+          BRAIN_API_KEY_1: ${{ secrets.BRAIN_API_KEY_1 }}
+          BRAIN_API_KEY_2: ${{ secrets.BRAIN_API_KEY_2 }}
+          BRAIN_API_KEY_3: ${{ secrets.BRAIN_API_KEY_3 }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          APP_URL: "https://github.com/${{ github.repository }}"
