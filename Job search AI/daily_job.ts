@@ -100,7 +100,7 @@ async function searchJobs(excludeLinks: string[] = []) {
     return [];
   }
 
-  const prompt = `Search for 5 UNIQUE and RECENT job listings in London that match these criteria:
+  const prompt = `Search for 10 UNIQUE and RECENT job listings in London that match these criteria:
 ${SEARCH_CRITERIA}
 
 CRITICAL: 
@@ -575,7 +575,28 @@ export async function runDailyJob() {
   allJobs = allJobs.slice(0, 10);
 
   if (allJobs.length === 0) {
-    console.log("No new valid jobs found today. No email will be sent.");
+    console.log("No new valid jobs found today. Sending status email...");
+    try {
+      const todayStr = new Date().toLocaleDateString('en-GB');
+      await resend.emails.send({
+        from: "Job Hunter AI <onboarding@resend.dev>",
+        to: ["ritvikyalala@gmail.com"],
+        subject: `Daily Job Search Update (${todayStr}) - No Matching Jobs`,
+        html: `
+          <h1>Job Search Update</h1>
+          <p>The daily search was performed but <strong>no new jobs</strong> met your strict verification standards today.</p>
+          <p><strong>Criteria checked:</strong></p>
+          <ul>
+            <li>Location: England, UK (West London focus)</li>
+            <li>Role: Junior/Entry-level Cloud & Support</li>
+            <li>Recency: Posted within the last 7 days</li>
+          </ul>
+          <p><em>The system filters out expired listings, US-based roles, and mismatched job descriptions automatically.</em></p>
+        `
+      });
+    } catch (e) {
+      console.warn("Failed to send status email:", e);
+    }
     return;
   }
 
