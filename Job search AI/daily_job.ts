@@ -159,13 +159,13 @@ async function parseJobs(searchResponseText: string) {
   }
 
   const verifiedJobs = [];
-  console.log(`Found ${jobs.length} potential jobs. Verifying links with Puppeteer...`);
+  console.log(`Found ${jobs.length} potential jobs. Verifying links with Puppeteer (Hardened Mode)...`);
   
   let browser;
   try {
     browser = await puppeteer.launch({ 
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled'] 
     });
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
@@ -176,7 +176,7 @@ async function parseJobs(searchResponseText: string) {
       
       try {
         console.log(`Verifying: ${job.link}`);
-        const response = await page.goto(job.link, { waitUntil: 'networkidle2', timeout: 20000 });
+        const response = await page.goto(job.link, { waitUntil: 'networkidle2', timeout: 25000 });
         
         if (!response) {
           console.log(`No response for ${job.link}`);
@@ -184,17 +184,26 @@ async function parseJobs(searchResponseText: string) {
         }
 
         const status = response.status();
-        if (status >= 400) {
-          // Some sites block Puppeteer with 403, but if it's a known job board we might keep it
-          // However, for strictness, we'll skip if it's a 404
-          if (status === 404 || status === 410) {
-            console.log(`Dead link (${status}): ${job.link}`);
-            continue;
-          }
+        if (status === 404 || status === 410) {
+          console.log(`Dead link (${status}): ${job.link}`);
+          continue;
         }
 
         const content = (await page.content()).toLowerCase();
         
+        // Check for bot challenges
+        const botIndicators = [
+          "verify you are human",
+          "cloudflare",
+          "please enable cookies",
+          "press and hold",
+          "access denied"
+        ];
+        if (botIndicators.some(bi => content.includes(bi) && !content.includes("job description"))) {
+           console.log(`Bot challenge detected or blocked: ${job.link}`);
+           continue;
+        }
+
         // Check for dead indicators
         const deadIndicators = [
           "job is no longer available", 
@@ -202,32 +211,48 @@ async function parseJobs(searchResponseText: string) {
           "this job has expired",
           "listing has ended",
           "we couldn't find that job",
-          "no longer accepting applications"
+          "no longer accepting applications",
+          "position closed",
+          "vacancy is closed",
+          "successfully filled",
+          "no longer active"
         ];
         
-        let isDead = false;
-        for (const indicator of deadIndicators) {
-          if (content.includes(indicator)) {
-            console.log(`Link appears expired (found "${indicator}"): ${job.link}`);
-            isDead = true;
-            break;
-          }
-        }
-        if (isDead) continue;
-
-        // Verify keywords to ensure we didn't end up on a search result page or generic home page
-        const jobTitle = job.title.toLowerCase();
-        const keywords = jobTitle.split(/\s+/).filter(w => w.length > 3);
-        let matchCount = 0;
-        for (const word of keywords) {
-          if (content.includes(word)) matchCount++;
+        if (deadIndicators.some(indicator => content.includes(indicator))) {
+          console.log(`Link appears expired: ${job.link}`);
+          continue;
         }
 
-        // If it's a major job board, we're more lenient, but if it's a random site it must match
-        const isMajorBoard = job.link.includes('indeed') || job.link.includes('linkedin') || job.link.includes('reed') || job.link.includes('totaljobs');
+        // Extract Title and check for role mismatch
+        const pageTitle = (await page.title()).toLowerCase();
+        const firstH1 = await page.evaluate(() => document.querySelector('h1')?.textContent || "");
+        const headerText = (pageTitle + " " + firstH1).toLowerCase();
         
-        if (!isMajorBoard && matchCount === 0 && keywords.length > 0) {
-          console.log(`Content mismatch for ${job.link}. Skipping.`);
+        const jobTitle = job.title.toLowerCase();
+        const companyName = job.company.toLowerCase();
+        
+        // Stricter Keyword Check
+        const roleKeywords = jobTitle.split(/\s+/).filter(w => w.length > 3);
+        const companyKeywords = companyName.split(/\s+/).filter(w => w.length > 2);
+        
+        let roleMatches = roleKeywords.filter(w => headerText.includes(w)).length;
+        let companyMatches = companyKeywords.filter(w => content.includes(w)).length;
+
+        console.log(`Matches - Role Keywords: ${roleMatches}/${roleKeywords.length}, Company: ${companyMatches}/${companyKeywords.length}`);
+
+        // STRICT RULES:
+        // 1. Must match at least one unique role keyword in the header (h1/title) OR 2 in the body
+        // 2. Must match the company name if it's reasonably unique
+        const hasRoleMatch = roleMatches >= 1 || roleKeywords.filter(w => content.includes(w)).length >= 2;
+        const hasCompanyMatch = companyKeywords.length === 0 || companyMatches >= 1;
+
+        if (!hasRoleMatch) {
+          console.log(`Role mismatch for ${job.link}. (Expected: ${job.title})`);
+          continue;
+        }
+        
+        if (!hasCompanyMatch) {
+          console.log(`Company mismatch for ${job.link}. (Expected: ${job.company})`);
           continue;
         }
 
@@ -235,8 +260,6 @@ async function parseJobs(searchResponseText: string) {
         verifiedJobs.push(job);
       } catch (e: any) {
         console.log(`Verification error for ${job.link}: ${e.message}`);
-        // If it's a move/navigation error but the URL looks very specific, we might keep it
-        // but for reliability we only keep what we can actually see.
       }
     }
   } catch (err: any) {
@@ -515,7 +538,7 @@ export async function runDailyJob() {
   }
 
   const seenLinks: string[] = [];
-  const NUM_SEARCH_BATCHES = 3;
+  const NUM_SEARCH_BATCHES = 4;
   let allJobs: any[] = [];
 
   for (let batch = 1; batch <= NUM_SEARCH_BATCHES; batch++) {
