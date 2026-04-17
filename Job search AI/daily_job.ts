@@ -75,19 +75,22 @@ Freshness: Only process roles posted within the last 30 days. Skip expired listi
 
 function unwrapLink(link: string): string {
   try {
-    if (!link) return "";
+    if (!link || !link.startsWith("http")) return "";
     const url = new URL(link);
-    // Handle Google Search redirects
+    
+    // Handle Google Search redirects more strictly
     if (url.hostname.includes("google.com") && (url.pathname === "/url" || url.pathname === "/search")) {
-      const target = url.searchParams.get("q") || url.searchParams.get("url");
-      if (target) return target;
+      const target = url.searchParams.get("url") || url.searchParams.get("q");
+      if (target && target.startsWith("http")) return target;
+      if (url.pathname === "/search") return ""; // Don't return search queries
     }
-    // Handle LinkedIn redirects if any
-    if (url.hostname.includes("linkedin.com") && url.pathname.includes("/jobs/view/")) {
-       // LinkedIn links are usually fine but can be session-locked.
-    }
+    
+    // Ensure we have a valid absolute URL
+    if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+    
+    return link;
   } catch (e) {}
-  return link;
+  return "";
 }
 
 async function searchJobs(excludeLinks: string[] = []) {
@@ -100,10 +103,11 @@ async function searchJobs(excludeLinks: string[] = []) {
 ${SEARCH_CRITERIA}
 
 CRITICAL: 
-1. Find jobs posted within the last 14 days.
-2. You MUST provide the DIRECT, ORIGINAL URL to the job board (e.g., indeed.com, totaljobs.com, reed.co.uk, linkedin.com). 
-3. DO NOT return Google Search redirect links.
-4. DO NOT return any of these links (already processed):
+1. Find jobs posted within the last 7 days. DO NOT search for older jobs.
+2. You MUST provide the DIRECT, ORIGINAL URL to the job listing on a major job board (e.g., indeed.com, totaljobs.com, reed.co.uk, linkedin.com, glassdoor.co.uk).
+3. DO NOT return Google Search result pages (URLs starting with google.com/search).
+4. DO NOT GUESS URLs. If you cannot find the direct link, skip the job.
+5. DO NOT return any of these links (already processed):
 ${excludeLinks.length > 0 ? excludeLinks.join('\n') : 'None'}
 
 Return results as plain text, separated by "---".
@@ -120,15 +124,8 @@ WEST_LONDON: [true or false]
   const searchResponse = await callGemini(prompt, { useSearch: true });
 
   if (!searchResponse || !searchResponse.text || searchResponse.text.length < 50) {
-    console.warn("Gemini search failed or returned too little data. Using fallback pool...");
-    const fallbackPool = [
-      { title: "Trainee IT Support Assistant", company: "IT Career Swap", location: "London", description: "Entry-level IT support role with training provided.", link: "https://www.reed.co.uk/jobs/trainee-it-support-assistant/56729674", industry: "Pure Tech/Infrastructure", isWestLondon: false },
-      { title: "Trainee IT Support", company: "IT Career Swap", location: "London", description: "Learn 1st line support and networking.", link: "https://www.reed.co.uk/jobs/trainee-it-support/56674276", industry: "Pure Tech/Infrastructure", isWestLondon: false },
-      { title: "Junior IT Support Analyst", company: "Robert Half", location: "London", description: "1st line support for a growing tech company.", link: "https://www.reed.co.uk/jobs/junior-it-support-analyst/56784046", industry: "Pure Tech/Infrastructure", isWestLondon: false },
-      { title: "Trainee IT Support Technician", company: "IT Career Swap", location: "London", description: "Hardware and software troubleshooting.", link: "https://www.reed.co.uk/jobs/trainee-it-support-technician/56451461", industry: "Pure Tech/Infrastructure", isWestLondon: false },
-      { title: "Trainee IT Support Engineer", company: "IT Career Swap", location: "London", description: "Cloud and infrastructure support training.", link: "https://www.reed.co.uk/jobs/trainee-it-support-engineer/56756331", industry: "Pure Tech/Infrastructure", isWestLondon: false }
-    ];
-    return fallbackPool.filter(f => !excludeLinks.includes(f.link)).slice(0, 5);
+    console.warn("Gemini search failed or returned too little data.");
+    return [];
   }
   return parseJobs(searchResponse.text);
 }
@@ -161,52 +158,94 @@ async function parseJobs(searchResponseText: string) {
     }
   }
 
+  const verifiedJobs = [];
+  console.log(`Found ${jobs.length} potential jobs. Verifying links with Puppeteer...`);
+  
+  let browser;
   try {
-    const verifiedJobs = [];
-    console.log(`Found ${jobs.length} potential jobs. Verifying links...`);
+    browser = await puppeteer.launch({ 
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+    });
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    await page.setViewport({ width: 1280, height: 800 });
+
     for (const job of jobs) {
       if (!job.link) continue;
       
-      // Final check for search links that might have slipped through
-      if (job.link.includes("google.com/search") || job.link.includes("bing.com/search")) {
-        console.log(`Skipping search engine link: ${job.link}`);
-        continue;
-      }
-
       try {
         console.log(`Verifying: ${job.link}`);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-        const res = await fetch(job.link, { 
-          method: 'GET', 
-          headers: { 
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
-          },
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
+        const response = await page.goto(job.link, { waitUntil: 'networkidle2', timeout: 20000 });
         
-        if (res.status === 404 || res.status === 410) {
-          console.log(`Dead link (${res.status}): ${job.link}`);
+        if (!response) {
+          console.log(`No response for ${job.link}`);
           continue;
         }
+
+        const status = response.status();
+        if (status >= 400) {
+          // Some sites block Puppeteer with 403, but if it's a known job board we might keep it
+          // However, for strictness, we'll skip if it's a 404
+          if (status === 404 || status === 410) {
+            console.log(`Dead link (${status}): ${job.link}`);
+            continue;
+          }
+        }
+
+        const content = (await page.content()).toLowerCase();
         
-        console.log(`Link verified (${res.status}): ${job.link}`);
+        // Check for dead indicators
+        const deadIndicators = [
+          "job is no longer available", 
+          "position has been filled", 
+          "this job has expired",
+          "listing has ended",
+          "we couldn't find that job",
+          "no longer accepting applications"
+        ];
+        
+        let isDead = false;
+        for (const indicator of deadIndicators) {
+          if (content.includes(indicator)) {
+            console.log(`Link appears expired (found "${indicator}"): ${job.link}`);
+            isDead = true;
+            break;
+          }
+        }
+        if (isDead) continue;
+
+        // Verify keywords to ensure we didn't end up on a search result page or generic home page
+        const jobTitle = job.title.toLowerCase();
+        const keywords = jobTitle.split(/\s+/).filter(w => w.length > 3);
+        let matchCount = 0;
+        for (const word of keywords) {
+          if (content.includes(word)) matchCount++;
+        }
+
+        // If it's a major job board, we're more lenient, but if it's a random site it must match
+        const isMajorBoard = job.link.includes('indeed') || job.link.includes('linkedin') || job.link.includes('reed') || job.link.includes('totaljobs');
+        
+        if (!isMajorBoard && matchCount === 0 && keywords.length > 0) {
+          console.log(`Content mismatch for ${job.link}. Skipping.`);
+          continue;
+        }
+
+        console.log(`Link verified: ${job.link}`);
         verifiedJobs.push(job);
       } catch (e: any) {
-        console.log(`Verification failed for ${job.link}: ${e.message}`);
-        if (e.name === 'AbortError' && (job.link.includes('indeed') || job.link.includes('linkedin') || job.link.includes('totaljobs'))) {
-          console.log(`Timeout but keeping likely valid job board link: ${job.link}`);
-          verifiedJobs.push(job);
-        }
-        continue;
+        console.log(`Verification error for ${job.link}: ${e.message}`);
+        // If it's a move/navigation error but the URL looks very specific, we might keep it
+        // but for reliability we only keep what we can actually see.
       }
     }
-    return verifiedJobs;
-  } catch (parseError) {
-    return [];
+  } catch (err: any) {
+    console.warn("Puppeteer verification failed:", err.message);
+  } finally {
+    if (browser) await browser.close();
   }
+  
+  return verifiedJobs;
 }
 
 async function generateCV(job: any) {
@@ -468,7 +507,7 @@ ${job.industry === "FinTech/Legal" ? '- Mention 80% Merit in CeMAP Module 1 and 
 
 
 export async function runDailyJob() {
-  console.log("Starting daily job search (3-email test mode)...");
+  console.log("Starting daily job search (Consolidated Single Email mode)...");
 
   if (!resend) {
     console.log("RESEND_API_KEY is not configured. Cannot send emails.");
@@ -476,116 +515,121 @@ export async function runDailyJob() {
   }
 
   const seenLinks: string[] = [];
-  const TOTAL_EMAILS = 3;
-  const JOBS_PER_EMAIL = 5;
+  const NUM_SEARCH_BATCHES = 3;
+  let allJobs: any[] = [];
 
-  for (let emailNum = 1; emailNum <= TOTAL_EMAILS; emailNum++) {
-    console.log(`\n--- Processing Email ${emailNum}/${TOTAL_EMAILS} ---`);
+  for (let batch = 1; batch <= NUM_SEARCH_BATCHES; batch++) {
+    console.log(`\n--- Searching for Jobs (Search ${batch}/${NUM_SEARCH_BATCHES}) ---`);
+    const jobs = await searchJobs(seenLinks);
     
-    let jobs = await searchJobs(seenLinks);
-    jobs = jobs.slice(0, JOBS_PER_EMAIL);
-
-    if (jobs.length === 0) {
-      console.log(`No new jobs found for email ${emailNum}.`);
-      continue;
-    }
-
-    // Update seen links
-    jobs.forEach(j => seenLinks.push(j.link));
-
-    console.log(`Found ${jobs.length} jobs for email ${emailNum}. Generating documents...`);
-
-    let emailHtml = `<h1>Your Daily Job Leads (Batch ${emailNum})</h1><p>Here are your tailored applications for today:</p><hr/>`;
-    const attachments: any[] = [];
-    const filesToCleanup: string[] = [];
-
-    let browser;
-    try {
-      browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-
-      const jobPromises = jobs.map(async (job) => {
-        console.log(`Processing: ${job.title} at ${job.company}`);
-        
-        const [cvHtml, clHtml] = await Promise.all([
-          generateCV(job),
-          generateCoverLetter(job)
-        ]);
-        
-        const safeCompanyName = job.company.replace(/[^a-zA-Z0-9]/g, '_');
-        const timestamp = Date.now() + Math.floor(Math.random() * 1000);
-        const cvFilename = `CV_Ritvik_Yalala_${safeCompanyName}_${timestamp}.pdf`;
-        const clFilename = `CoverLetter_Ritvik_Yalala_${safeCompanyName}_${timestamp}.pdf`;
-        
-        const page = await browser.newPage();
-        
-        await page.setContent(cvHtml, { waitUntil: 'load' });
-        await page.pdf({ path: cvFilename, format: 'A4', printBackground: true });
-        
-        await page.setContent(clHtml, { waitUntil: 'load' });
-        await page.pdf({ path: clFilename, format: 'A4', printBackground: true });
-        
-        await page.close();
-        
-        const cvBuffer = fs.readFileSync(cvFilename);
-        const clBuffer = fs.readFileSync(clFilename);
-        
-        return {
-          job,
-          cvFilename,
-          clFilename,
-          cvBuffer,
-          clBuffer
-        };
-      });
-
-      const results = await Promise.all(jobPromises);
-
-      for (const result of results) {
-        attachments.push({ filename: result.cvFilename, content: result.cvBuffer });
-        attachments.push({ filename: result.clFilename, content: result.clBuffer });
-        filesToCleanup.push(result.cvFilename, result.clFilename);
-        
-        emailHtml += `
-          <h2>${result.job.title} at ${result.job.company}</h2>
-          <p><strong>Location:</strong> ${result.job.location}</p>
-          <p><strong>Industry Mode:</strong> ${result.job.industry}</p>
-          <p><strong>Description:</strong> ${result.job.description}</p>
-          <p><a href="${result.job.link}">View Job Posting</a></p>
-          <p><em>Tailored CV and Cover Letter attached.</em></p>
-          <hr/>
-        `;
+    for (const job of jobs) {
+      if (!seenLinks.includes(job.link)) {
+        allJobs.push(job);
+        seenLinks.push(job.link);
       }
-    } catch (err) {
-      console.warn("Error during PDF generation:", err);
-    } finally {
-      if (browser) await browser.close();
-    }
-
-    try {
-      await resend.emails.send({
-        from: "Job Hunter AI <onboarding@resend.dev>",
-        to: ["ritvikyalala@gmail.com"],
-        subject: `Targeted Job Leads & Tailored Applications (Batch ${emailNum})`,
-        html: emailHtml,
-        attachments: attachments
-      });
-      console.log(`Email ${emailNum} sent successfully.`);
-    } catch (error) {
-      console.warn(`Failed to send email ${emailNum}:`, error);
     }
     
-    // Cleanup PDFs
-    for (const file of filesToCleanup) {
-      try {
-        fs.unlinkSync(file);
-      } catch (e) {}
+    // Slight delay between searches if needed
+    if (batch < NUM_SEARCH_BATCHES) {
+      await new Promise(r => setTimeout(r, 5000));
     }
+  }
+  
+  // Optional: cap the total number of jobs per email to avoid overwhelming attachments
+  allJobs = allJobs.slice(0, 10);
 
-    // Small delay between emails to avoid hitting Resend limits or being too spammy
-    if (emailNum < TOTAL_EMAILS) {
-      console.log("Waiting 10 seconds before next batch...");
-      await sleep(10000);
+  if (allJobs.length === 0) {
+    console.log("No new valid jobs found today. No email will be sent.");
+    return;
+  }
+
+  console.log(`\nFound ${allJobs.length} Total Jobs. Generating documents and preparing email...`);
+
+  let emailHtml = `<h1>Your Daily Job Leads</h1><p>Here are your tailored applications for today:</p><hr/>`;
+  const attachments: any[] = [];
+  const filesToCleanup: string[] = [];
+
+  let browser;
+  try {
+    browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+
+    const jobPromises = allJobs.map(async (job) => {
+      console.log(`Processing: ${job.title} at ${job.company}`);
+      
+      const [cvHtml, clHtml] = await Promise.all([
+        generateCV(job),
+        generateCoverLetter(job)
+      ]);
+      
+      const safeCompanyName = job.company.replace(/[^a-zA-Z0-9]/g, '_');
+      const timestamp = Date.now() + Math.floor(Math.random() * 1000);
+      const cvFilename = `CV_Ritvik_Yalala_${safeCompanyName}_${timestamp}.pdf`;
+      const clFilename = `CoverLetter_Ritvik_Yalala_${safeCompanyName}_${timestamp}.pdf`;
+      
+      const page = await browser.newPage();
+      
+      await page.setContent(cvHtml, { waitUntil: 'load' });
+      await page.pdf({ path: cvFilename, format: 'A4', printBackground: true });
+      
+      await page.setContent(clHtml, { waitUntil: 'load' });
+      await page.pdf({ path: clFilename, format: 'A4', printBackground: true });
+      
+      await page.close();
+      
+      const cvBuffer = fs.readFileSync(cvFilename);
+      const clBuffer = fs.readFileSync(clFilename);
+      
+      return {
+        job,
+        cvFilename,
+        clFilename,
+        cvBuffer,
+        clBuffer
+      };
+    });
+
+    const results = await Promise.all(jobPromises);
+
+    for (const result of results) {
+      attachments.push({ filename: result.cvFilename, content: result.cvBuffer });
+      attachments.push({ filename: result.clFilename, content: result.clBuffer });
+      filesToCleanup.push(result.cvFilename, result.clFilename);
+      
+      emailHtml += `
+        <h2>${result.job.title} at ${result.job.company}</h2>
+        <p><strong>Location:</strong> ${result.job.location}</p>
+        <p><strong>Industry Mode:</strong> ${result.job.industry}</p>
+        <p><strong>Description:</strong> ${result.job.description}</p>
+        <p><a href="${result.job.link}">View Job Posting</a></p>
+        <p><em>Tailored CV and Cover Letter attached.</em></p>
+        <hr/>
+      `;
     }
+  } catch (err) {
+    console.warn("Error during PDF generation:", err);
+  } finally {
+    if (browser) await browser.close();
+  }
+
+  try {
+    const todayStr = new Date().toLocaleDateString('en-GB');
+    await resend.emails.send({
+      from: "Job Hunter AI <onboarding@resend.dev>",
+      to: ["ritvikyalala@gmail.com"],
+      subject: `Daily Targeted Job Leads & Tailored Applications (${todayStr})`,
+      html: emailHtml,
+      attachments: attachments
+    });
+    console.log(`Single batch email sent successfully with ${allJobs.length} jobs.`);
+  } catch (error) {
+    console.warn(`Failed to send email:`, error);
+  }
+  
+  // Cleanup PDFs
+  for (const file of filesToCleanup) {
+    try {
+      fs.unlinkSync(file);
+    } catch (e) {}
   }
 }
 
