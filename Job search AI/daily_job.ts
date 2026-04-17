@@ -68,10 +68,10 @@ async function callGemini(prompt: string, options: { models?: string[], useSearc
 
 const SEARCH_CRITERIA = `
 Country: ONLY find jobs in England, United Kingdom.
-Specific Locations: Isleworth, Heathrow, Slough, Richmond, Chiswick, Brentford, or Central London.
-Roles: Junior Cloud Support, NOC Technician, Junior DevOps, Cloud Ops Assistant, 1st Line IT Support, Service Desk (Finance/Legal), Junior App Support.
+Preferred Regions: Isleworth, Heathrow, Slough, Richmond, Chiswick, Brentford, or Central London (Prioritize M4 Corridor for travel savings).
+Roles: Junior Cloud Support Associate, NOC Technician, Junior DevOps, Cloud Operations Assistant, 1st Line IT Support, Service Desk (Finance/Legal), Junior App Support.
 Strict Rejection: Exclude any role marked "Senior," "Lead," "Manager," or requiring >3 years of experience.
-Freshness: Only process roles posted within the last 30 days. Skip expired listings.
+Freshness: Only process roles posted within the last 14 days. Skip expired listings.
 `;
 
 function unwrapLink(link: string): string {
@@ -104,7 +104,7 @@ async function searchJobs(excludeLinks: string[] = []) {
 ${SEARCH_CRITERIA}
 
 CRITICAL: 
-1. Find jobs posted within the last 7 days. DO NOT search for older jobs.
+1. Find jobs posted within the last 14 days. DO NOT search for older jobs.
 2. You MUST provide the DIRECT, ORIGINAL URL to the job listing on a major job board (e.g., indeed.com, totaljobs.com, reed.co.uk, linkedin.com, glassdoor.co.uk).
 3. DO NOT return Google Search result pages (URLs starting with google.com/search).
 4. DO NOT GUESS URLs. If you cannot find the direct link, skip the job.
