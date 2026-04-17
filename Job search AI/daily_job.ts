@@ -596,9 +596,9 @@ export async function runDailyJob() {
           <p>The daily search was performed but <strong>no new jobs</strong> met your strict verification standards today.</p>
           <p><strong>Criteria checked:</strong></p>
           <ul>
-            <li>Location: England, UK (West London focus)</li>
-            <li>Role: Junior/Entry-level Cloud & Support</li>
-            <li>Recency: Posted within the last 7 days</li>
+            <li>Location: England, UK (M4 Corridor & Greater London)</li>
+            <li>Role: Junior Cloud Support, NOC Tech, IT Support, etc.</li>
+            <li>Recency: Posted within the last 14 days</li>
           </ul>
           <p><em>The system filters out expired listings, US-based roles, and mismatched job descriptions automatically.</em></p>
         `
