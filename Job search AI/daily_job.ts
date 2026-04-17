@@ -190,7 +190,15 @@ async function parseJobs(searchResponseText: string) {
           continue;
         }
 
-        const content = (await page.content()).toLowerCase();
+        // Redirect check: If we got redirected to a generic search page, the job is dead or fake.
+        const currentUrl = page.url();
+        if (currentUrl.includes("/search") || currentUrl.includes("jobs?q=")) {
+          console.log(`Redirected to generic search page, not the actual job: ${currentUrl}`);
+          continue;
+        }
+
+        // Get visible text instead of raw HTML to prevent matching metadata, scripts, or URLs.
+        const content = await page.evaluate(() => document.body?.innerText || "").then(t => t.toLowerCase());
         
         // Check for bot challenges
         const botIndicators = [
@@ -216,7 +224,8 @@ async function parseJobs(searchResponseText: string) {
           "position closed",
           "vacancy is closed",
           "successfully filled",
-          "no longer active"
+          "no longer active",
+          "page not found"
         ];
         
         if (deadIndicators.some(indicator => content.includes(indicator))) {
@@ -226,8 +235,8 @@ async function parseJobs(searchResponseText: string) {
 
         // Extract Title and check for role mismatch
         const pageTitle = (await page.title()).toLowerCase();
-        const firstH1 = await page.evaluate(() => document.querySelector('h1')?.textContent || "");
-        const headerText = (pageTitle + " " + firstH1).toLowerCase();
+        const firstH1 = await page.evaluate(() => document.querySelector('h1')?.textContent || "").then(t => t.toLowerCase());
+        const headerText = (pageTitle + " " + firstH1);
         
         const jobTitle = job.title.toLowerCase();
         const companyName = job.company.toLowerCase();
