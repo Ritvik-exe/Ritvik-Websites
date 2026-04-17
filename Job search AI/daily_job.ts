@@ -159,8 +159,10 @@ async function parseJobs(searchResponseText: string) {
     }
   }
 
-  const verifiedJobs = [];
-  console.log(`Found ${jobs.length} potential jobs. Verifying links with Puppeteer (Hardened Mode)...`);
+  const verifiedJobs: any[] = [];
+  const rejections = { expired: 0, location: 0, role: 0, bot: 0, total: 0 };
+  
+  console.log(`Found ${jobs.length} potential jobs. Verifying links with Puppeteer (Nuclear Protection Mode)...`);
   
   let browser;
   try {
@@ -174,6 +176,7 @@ async function parseJobs(searchResponseText: string) {
 
     for (const job of jobs) {
       if (!job.link) continue;
+      rejections.total++;
       
       try {
         console.log(`Verifying: ${job.link}`);
@@ -181,100 +184,107 @@ async function parseJobs(searchResponseText: string) {
         
         if (!response) {
           console.log(`No response for ${job.link}`);
+          rejections.bot++;
           continue;
         }
 
         const status = response.status();
         if (status === 404 || status === 410) {
           console.log(`Dead link (${status}): ${job.link}`);
+          rejections.expired++;
           continue;
         }
 
         // Redirect check: If we got redirected to a generic search page, the job is dead or fake.
         const currentUrl = page.url();
-        if (currentUrl.includes("/search") || currentUrl.includes("jobs?q=")) {
-          console.log(`Redirected to generic search page, not the actual job: ${currentUrl}`);
+        if (currentUrl.includes("/search") || currentUrl.includes("jobs?q=") || currentUrl.includes("/login") || currentUrl.includes("/auth")) {
+          console.log(`Redirected to generic page (search/login), not the actual job: ${currentUrl}`);
+          rejections.bot++;
           continue;
         }
 
-        // Get visible text instead of raw HTML to prevent matching metadata, scripts, or URLs.
+        // Get visible text and page content
         const content = await page.evaluate(() => document.body?.innerText || "").then(t => t.toLowerCase());
+
+        // Bot / Wall Check: If page is too small, it's a login wall or cookie page
+        if (content.length < 800) {
+          console.log(`Page content too short (${content.length} chars). likely a wall: ${job.link}`);
+          rejections.bot++;
+          continue;
+        }
         
         // Check for bot challenges
         const botIndicators = [
-          "verify you are human",
-          "cloudflare",
-          "please enable cookies",
-          "press and hold",
-          "access denied"
+          "verify you are human", "cloudflare", "please enable cookies", "press and hold", "access denied",
+          "sign in to linkedin", "join to apply", "create an account to see"
         ];
         if (botIndicators.some(bi => content.includes(bi) && !content.includes("job description"))) {
            console.log(`Bot challenge detected or blocked: ${job.link}`);
+           rejections.bot++;
            continue;
         }
 
-        // Check for dead indicators
+        // Check for dead indicators (International)
         const deadIndicators = [
-          "job is no longer available", 
-          "position has been filled", 
-          "this job has expired",
-          "listing has ended",
-          "we couldn't find that job",
-          "no longer accepting applications",
-          "position closed",
-          "vacancy is closed",
-          "successfully filled",
-          "no longer active",
-          "page not found"
+          "job is no longer available", "position has been filled", "this job has expired",
+          "listing has ended", "we couldn't find that job", "no longer accepting applications",
+          "position closed", "vacancy is closed", "successfully filled", "no longer active", "page not found",
+          "vacature is gesloten", "niet meer beschikbaar", "stelle nicht mehr verfügbar", "abgeschlossen",
+          "offre n'est plus disponible", "clôturé"
         ];
         
         if (deadIndicators.some(indicator => content.includes(indicator))) {
           console.log(`Link appears expired: ${job.link}`);
+          rejections.expired++;
           continue;
         }
 
-        // Extract Title and check for role mismatch
+        // Location Check: STRICT WHITELIST (UK ONLY)
+        const europeIndicators = ["netherlands", "germany", "belgium", "nederland", "deutschland", "belgië", "amsterdam", "berlin", "brussels", "munich", "rotterdam", "dublin", "ireland", "france", "paris", "spain", "madrid", "italy", "rome"];
+        const usIndicators = [", us", ", usa", "united states", "america", "usa"];
+        const ukIndicators = ["london", "england", "united kingdom", "uk", "isleworth", "heathrow", "slough", "richmond", "chiswick", "brentford", "hounslow", "ealing", "staines"];
+        
+        const hasEurope = europeIndicators.some(ei => content.includes(ei));
+        const hasUS = usIndicators.some(ui => content.includes(ui));
+        const hasUK = ukIndicators.some(ui => content.includes(ui));
+        
         const pageTitle = (await page.title()).toLowerCase();
         const firstH1 = await page.evaluate(() => document.querySelector('h1')?.textContent || "").then(t => t.toLowerCase());
         const headerText = (pageTitle + " " + firstH1);
-        
+
+        // Reject if any European or US country is mentioned unless UK is strongly present
+        if ((hasEurope || hasUS) && !headerText.includes("london") && !headerText.includes("uk") && !headerText.includes("united kingdom")) {
+           console.log(`Location rejection (International found): ${job.link}`);
+           rejections.location++;
+           continue;
+        }
+
+        // Must explicitly contain UK location in content
+        if (!hasUK && !headerText.includes("london") && !headerText.includes("slough")) {
+          console.log(`Location rejection (No UK keywords found): ${job.link}`);
+          rejections.location++;
+          continue;
+        }
+
+        // Extract Title and check for role mismatch (STRICT)
         const jobTitle = job.title.toLowerCase();
-        const companyName = job.company.toLowerCase();
-        
-        // Stricter Keyword Check
         const roleKeywords = jobTitle.split(/\s+/).filter(w => w.length > 3);
-        const companyKeywords = companyName.split(/\s+/).filter(w => w.length > 2);
         
-        let roleMatches = roleKeywords.filter(w => headerText.includes(w)).length;
-        let companyMatches = companyKeywords.filter(w => content.includes(w)).length;
-
-        console.log(`Matches - Role Keywords: ${roleMatches}/${roleKeywords.length}, Company: ${companyMatches}/${companyKeywords.length}`);
-
-        // STRICT RULES:
-        // 1. Must match at least one unique role keyword in the header (h1/title) OR 2 in the body
-        // 2. Must match the company name if it's reasonably unique
-        const hasRoleMatch = roleMatches >= 1 || roleKeywords.filter(w => content.includes(w)).length >= 2;
-        const hasCompanyMatch = companyKeywords.length === 0 || companyMatches >= 1;
-
-        if (!hasRoleMatch) {
-          console.log(`Role mismatch for ${job.link}. (Expected: ${job.title})`);
-          continue;
-        }
+        // Count matches in H1/Title specifically
+        let roleMatchesInHeader = roleKeywords.filter(w => headerText.includes(w)).length;
         
-        if (!hasCompanyMatch) {
-          console.log(`Company mismatch for ${job.link}. (Expected: ${job.company})`);
+        // Reject if Senior/Lead/Manager is in the H1 but not in requested title
+        const negativeKeywords = ["senior", "lead", "manager", "principal", "head of", "director"];
+        if (negativeKeywords.some(nk => headerText.includes(nk) && !jobTitle.includes(nk))) {
+          console.log(`Role rejection (Seniority found in H1): ${job.link}`);
+          rejections.role++;
           continue;
         }
 
-        // Location Verification: Reject US locations
-        const usIndicators = [", us", ", usa", "united states", "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming"];
-        const ukIndicators = ["london", "england", "united kingdom", "uk", "isleworth", "heathrow", "slough", "richmond", "chiswick", "brentford"];
-        
-        const hasUSIndicator = usIndicators.some(ui => content.includes(ui) || pageTitle.includes(ui));
-        const hasUKIndicator = ukIndicators.some(ui => content.includes(ui) || pageTitle.includes(ui));
-
-        if (hasUSIndicator && !hasUKIndicator) {
-          console.log(`Location mismatch (Appears to be USA): ${job.link}`);
+        // Hard rule: Must match at least TWO non-generic keywords from the title in the page header
+        if (roleMatchesInHeader < 2 && roleKeywords.length >= 2) {
+          console.log(`Role mismatch (Header match score ${roleMatchesInHeader}/${roleKeywords.length}): ${job.link}`);
+          rejections.role++;
           continue;
         }
 
@@ -282,6 +292,7 @@ async function parseJobs(searchResponseText: string) {
         verifiedJobs.push(job);
       } catch (e: any) {
         console.log(`Verification error for ${job.link}: ${e.message}`);
+        rejections.bot++;
       }
     }
   } catch (err: any) {
@@ -290,7 +301,7 @@ async function parseJobs(searchResponseText: string) {
     if (browser) await browser.close();
   }
   
-  return verifiedJobs;
+  return { verifiedJobs, rejections };
 }
 
 async function generateCV(job: any) {
@@ -561,13 +572,20 @@ export async function runDailyJob() {
 
   const seenLinks: string[] = [];
   const NUM_SEARCH_BATCHES = 4;
-  let allJobs: any[] = [];
+  const globalRejections = { expired: 0, location: 0, role: 0, bot: 0, total: 0 };
 
   for (let batch = 1; batch <= NUM_SEARCH_BATCHES; batch++) {
     console.log(`\n--- Searching for Jobs (Search ${batch}/${NUM_SEARCH_BATCHES}) ---`);
-    const jobs = await searchJobs(seenLinks);
+    const { verifiedJobs, rejections } = await searchJobs(seenLinks);
     
-    for (const job of jobs) {
+    // Aggregate rejections
+    globalRejections.expired += rejections.expired;
+    globalRejections.location += rejections.location;
+    globalRejections.role += rejections.role;
+    globalRejections.bot += rejections.bot;
+    globalRejections.total += rejections.total;
+
+    for (const job of verifiedJobs) {
       if (!seenLinks.includes(job.link)) {
         allJobs.push(job);
         seenLinks.push(job.link);
@@ -600,7 +618,15 @@ export async function runDailyJob() {
             <li>Role: Junior Cloud Support, NOC Tech, IT Support, etc.</li>
             <li>Recency: Posted within the last 14 days</li>
           </ul>
-          <p><em>The system filters out expired listings, US-based roles, and mismatched job descriptions automatically.</em></p>
+          <h3>Rejection Summary (Why we sent nothing):</h3>
+          <ul>
+            <li><strong>International/Wrong Location:</strong> ${globalRejections.location} links</li>
+            <li><strong>Wrong Role/Seniority:</strong> ${globalRejections.role} links</li>
+            <li><strong>Expired/Closed:</strong> ${globalRejections.expired} links</li>
+            <li><strong>Blocked/Bot Wall:</strong> ${globalRejections.bot} links</li>
+          </ul>
+          <p><em>Total links scanned: ${globalRejections.total}</em></p>
+          <p>The system is protecting you from the junk we found today. We will try again tomorrow!</p>
         `
       });
     } catch (e) {
