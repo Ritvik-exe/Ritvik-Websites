@@ -67,7 +67,8 @@ async function callGemini(prompt: string, options: { models?: string[], useSearc
 }
 
 const SEARCH_CRITERIA = `
-Locations: Isleworth, Heathrow, Slough, Richmond, Chiswick, Brentford, or Central London.
+Country: ONLY find jobs in England, United Kingdom.
+Specific Locations: Isleworth, Heathrow, Slough, Richmond, Chiswick, Brentford, or Central London.
 Roles: Junior Cloud Support, NOC Technician, Junior DevOps, Cloud Ops Assistant, 1st Line IT Support, Service Desk (Finance/Legal), Junior App Support.
 Strict Rejection: Exclude any role marked "Senior," "Lead," "Manager," or requiring >3 years of experience.
 Freshness: Only process roles posted within the last 30 days. Skip expired listings.
@@ -253,6 +254,18 @@ async function parseJobs(searchResponseText: string) {
         
         if (!hasCompanyMatch) {
           console.log(`Company mismatch for ${job.link}. (Expected: ${job.company})`);
+          continue;
+        }
+
+        // Location Verification: Reject US locations
+        const usIndicators = [", us", ", usa", "united states", "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming"];
+        const ukIndicators = ["london", "england", "united kingdom", "uk", "isleworth", "heathrow", "slough", "richmond", "chiswick", "brentford"];
+        
+        const hasUSIndicator = usIndicators.some(ui => content.includes(ui) || pageTitle.includes(ui));
+        const hasUKIndicator = ukIndicators.some(ui => content.includes(ui) || pageTitle.includes(ui));
+
+        if (hasUSIndicator && !hasUKIndicator) {
+          console.log(`Location mismatch (Appears to be USA): ${job.link}`);
           continue;
         }
 
