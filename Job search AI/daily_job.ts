@@ -107,9 +107,9 @@ ${SEARCH_CRITERIA}
 ${focusRole ? `\nCRITICAL FOCUS: You MUST prioritize finding jobs specifically for the role of "${focusRole}".\n` : ''}
 CRITICAL: 
 1. Find jobs posted within the last 14 days. DO NOT search for older jobs.
-2. You MUST provide the DIRECT, ORIGINAL URL. Prioritize direct company career pages OR easy-to-access job boards (e.g., reed.co.uk, totaljobs.com, cv-library.co.uk). Avoid LinkedIn links when possible due to strict login walls.
+2. You MUST provide the DIRECT, ORIGINAL URL. Prioritize direct company career pages OR easy-to-access job boards (e.g., reed.co.uk, totaljobs.com, cv-library.co.uk). You MUST strictly AVOID linkedin.com and indeed.com as they are permanently blocked.
 3. DO NOT return Google Search result pages (URLs starting with google.com/search).
-4. DO NOT GUESS URLs. If you cannot find the direct link, skip the job.
+4. DO NOT GUESS URLs. If you cannot find a 100% real, active direct link to the job, skip it.
 5. DO NOT return any of these links (already processed):
 ${excludeLinks.length > 0 ? excludeLinks.join('\n') : 'None'}
 
@@ -184,10 +184,10 @@ async function parseJobs(searchResponseText: string) {
   try {
     browser = await puppeteer.launch({ 
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled'] 
+      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
     });
     const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    // Do NOT set custom User-Agent. Let the Stealth plugin handle it!
     await page.setViewport({ width: 1280, height: 800 });
 
     for (const job of jobs) {
@@ -221,7 +221,12 @@ async function parseJobs(searchResponseText: string) {
         const currentUrl = page.url();
         if (currentUrl.includes("/search") || currentUrl.includes("jobs?q=") || currentUrl.includes("/login") || currentUrl.includes("/auth") || currentUrl.includes("invalid_job")) {
           console.log(`Redirected to generic page (search/login/invalid), not the actual job: ${currentUrl}`);
-          rejections.bot++;
+          if (currentUrl.includes("/login") || currentUrl.includes("/auth")) {
+            rejections.bot++;
+          } else {
+            // These are usually expired jobs redirecting back to main search
+            rejections.expired++; 
+          }
           continue;
         }
 
