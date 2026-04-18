@@ -195,10 +195,10 @@ async function parseJobs(searchResponseText: string) {
           continue;
         }
 
-        // Redirect check: If we got redirected to a generic search page, the job is dead or fake.
+        // Redirect check: If we got redirected to a generic search page or an invalid job page.
         const currentUrl = page.url();
-        if (currentUrl.includes("/search") || currentUrl.includes("jobs?q=") || currentUrl.includes("/login") || currentUrl.includes("/auth")) {
-          console.log(`Redirected to generic page (search/login), not the actual job: ${currentUrl}`);
+        if (currentUrl.includes("/search") || currentUrl.includes("jobs?q=") || currentUrl.includes("/login") || currentUrl.includes("/auth") || currentUrl.includes("invalid_job")) {
+          console.log(`Redirected to generic page (search/login/invalid), not the actual job: ${currentUrl}`);
           rejections.bot++;
           continue;
         }
