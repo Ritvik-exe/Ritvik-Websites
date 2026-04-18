@@ -1,9 +1,11 @@
 import * as fs from "fs";
 import { Resend } from "resend";
 import { GoogleGenAI, Type } from "@google/genai";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import * as dotenv from "dotenv";
 
+puppeteer.use(StealthPlugin());
 dotenv.config();
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -105,7 +107,7 @@ ${SEARCH_CRITERIA}
 ${focusRole ? `\nCRITICAL FOCUS: You MUST prioritize finding jobs specifically for the role of "${focusRole}".\n` : ''}
 CRITICAL: 
 1. Find jobs posted within the last 14 days. DO NOT search for older jobs.
-2. You MUST provide the DIRECT, ORIGINAL URL to the job listing on a major job board (e.g., indeed.com, totaljobs.com, reed.co.uk, linkedin.com, glassdoor.co.uk).
+2. You MUST provide the DIRECT, ORIGINAL URL. Prioritize direct company career pages OR easy-to-access job boards (e.g., reed.co.uk, totaljobs.com, cv-library.co.uk). Avoid LinkedIn links when possible due to strict login walls.
 3. DO NOT return Google Search result pages (URLs starting with google.com/search).
 4. DO NOT GUESS URLs. If you cannot find the direct link, skip the job.
 5. DO NOT return any of these links (already processed):
@@ -129,6 +131,20 @@ WEST_LONDON: [true or false]
     return { verifiedJobs: [], rejections: { expired: 0, location: 0, role: 0, bot: 0, total: 0 } };
   }
   return parseJobs(searchResponse.text);
+}
+
+async function crushCookies(page: any) {
+  try {
+    await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button, a, div[role="button"]'));
+      for (const btn of buttons) {
+        const text = (btn.textContent || '').toLowerCase().trim();
+        if (text === 'accept all' || text === 'accept all cookies' || text === 'allow all' || text === 'accept cookies' || text === 'agree & proceed') {
+          (btn as HTMLElement).click();
+        }
+      }
+    });
+  } catch (e) {}
 }
 
 async function parseJobs(searchResponseText: string) {
@@ -181,6 +197,12 @@ async function parseJobs(searchResponseText: string) {
       try {
         console.log(`Verifying: ${job.link}`);
         const response = await page.goto(job.link, { waitUntil: 'networkidle2', timeout: 25000 });
+        
+        // Handle cookie banners that block the screen
+        await crushCookies(page);
+        
+        // Wait extra 2 seconds for JS generated content to appear
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         if (!response) {
           console.log(`No response for ${job.link}`);
