@@ -94,7 +94,7 @@ function unwrapLink(link: string): string {
   return "";
 }
 
-async function searchJobs(excludeLinks: string[] = []) {
+async function searchJobs(excludeLinks: string[] = [], focusRole: string = "") {
   if (aiInstances.length === 0) {
     console.warn("No API keys configured. Cannot search for jobs.");
     return { verifiedJobs: [], rejections: { expired: 0, location: 0, role: 0, bot: 0, total: 0 } };
@@ -102,7 +102,7 @@ async function searchJobs(excludeLinks: string[] = []) {
 
   const prompt = `Search for 10 UNIQUE and RECENT job listings in London that match these criteria:
 ${SEARCH_CRITERIA}
-
+${focusRole ? `\nCRITICAL FOCUS: You MUST prioritize finding jobs specifically for the role of "${focusRole}".\n` : ''}
 CRITICAL: 
 1. Find jobs posted within the last 14 days. DO NOT search for older jobs.
 2. You MUST provide the DIRECT, ORIGINAL URL to the job listing on a major job board (e.g., indeed.com, totaljobs.com, reed.co.uk, linkedin.com, glassdoor.co.uk).
@@ -571,13 +571,23 @@ export async function runDailyJob() {
   }
 
   const seenLinks: string[] = [];
-  const NUM_SEARCH_BATCHES = 4;
+  const ROLES_TO_ROTATE = [
+    "Junior Cloud Support Associate",
+    "NOC Technician",
+    "Junior DevOps",
+    "Cloud Operations Assistant",
+    "1st Line IT Support",
+    "Service Desk (Finance/Legal)",
+    "Junior App Support"
+  ];
+  const NUM_SEARCH_BATCHES = 10;
   const globalRejections = { expired: 0, location: 0, role: 0, bot: 0, total: 0 };
   let allJobs: any[] = [];
 
   for (let batch = 1; batch <= NUM_SEARCH_BATCHES; batch++) {
-    console.log(`\n--- Searching for Jobs (Search ${batch}/${NUM_SEARCH_BATCHES}) ---`);
-    const { verifiedJobs, rejections } = await searchJobs(seenLinks);
+    const focusRole = ROLES_TO_ROTATE[(batch - 1) % ROLES_TO_ROTATE.length];
+    console.log(`\n--- Searching for Jobs (Search ${batch}/${NUM_SEARCH_BATCHES}) [Focus: ${focusRole}] ---`);
+    const { verifiedJobs, rejections } = await searchJobs(seenLinks, focusRole);
     
     // Aggregate rejections
     globalRejections.expired += rejections.expired;
@@ -600,7 +610,7 @@ export async function runDailyJob() {
   }
   
   // Optional: cap the total number of jobs per email to avoid overwhelming attachments
-  allJobs = allJobs.slice(0, 10);
+  allJobs = allJobs.slice(0, 15);
 
   if (allJobs.length === 0) {
     console.log("No new valid jobs found today. Sending status email...");
