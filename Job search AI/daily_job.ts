@@ -107,9 +107,11 @@ ${SEARCH_CRITERIA}
 ${focusRole ? `\nCRITICAL FOCUS: You MUST prioritize finding jobs specifically for the role of "${focusRole}".\n` : ''}
 CRITICAL: 
 1. Find jobs posted within the last 14 days. DO NOT search for older jobs.
-2. You MUST provide the DIRECT, ORIGINAL URL. Prioritize direct company career pages OR easy-to-access job boards (e.g., reed.co.uk, totaljobs.com, cv-library.co.uk). You MUST strictly AVOID linkedin.com and indeed.com as they are permanently blocked.
+2. You MUST provide the DIRECT, ORIGINAL URL. 
+   - Whitelisted Sites (Strongly Prefer): reed.co.uk, totaljobs.com, cv-library.co.uk, cwjobs.co.uk, or direct company career pages (*.company-name.com).
+   - Forbidden Sites (Blocked): You MUST strictly AVOID linkedin.com and indeed.com as they are permanently blocked by anti-bot walls.
 3. DO NOT return Google Search result pages (URLs starting with google.com/search).
-4. DO NOT GUESS URLs. If you cannot find a 100% real, active direct link to the job, skip it.
+4. DO NOT GUESS URLs. If you cannot find a 100% real, active direct link to the job on one of the whitelisted sites, skip it.
 5. DO NOT return any of these links (already processed):
 ${excludeLinks.length > 0 ? excludeLinks.join('\n') : 'None'}
 
@@ -231,11 +233,18 @@ async function parseJobs(searchResponseText: string) {
         }
 
         // Get visible text and page content
-        const content = await page.evaluate(() => document.body?.innerText || "").then(t => t.toLowerCase());
+        let content = await page.evaluate(() => document.body?.innerText || "").then(t => t.toLowerCase());
 
-        // Bot / Wall Check: If page is too small, it's a login wall or cookie page
-        if (content.length < 800) {
-          console.log(`Page content too short (${content.length} chars). likely a wall: ${job.link}`);
+        // Bot / Wall Check: If page is too small, it might be loading or a wall
+        if (content.length < 500) {
+          console.log(`Page content very short (${content.length} chars). Waiting 3 more seconds for lazy load...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          content = await page.evaluate(() => document.body?.innerText || "").then(t => t.toLowerCase());
+        }
+
+        if (content.length < 450) {
+          const pageTitle = await page.title();
+          console.log(`[BOT WALL TRACER] Rejected ${job.link} - Title: "${pageTitle}" - Snippet: "${content.substring(0, 150).replace(/\n/g, ' ')}..."`);
           rejections.bot++;
           continue;
         }
@@ -246,7 +255,8 @@ async function parseJobs(searchResponseText: string) {
           "sign in to linkedin", "join to apply", "create an account to see"
         ];
         if (botIndicators.some(bi => content.includes(bi) && !content.includes("job description"))) {
-           console.log(`Bot challenge detected or blocked: ${job.link}`);
+           const pageTitle = await page.title();
+           console.log(`[BOT WALL TRACER] Challenge Detected at ${job.link} - Title: "${pageTitle}" - Snippet: "${content.substring(0, 150).replace(/\n/g, ' ')}..."`);
            rejections.bot++;
            continue;
         }
