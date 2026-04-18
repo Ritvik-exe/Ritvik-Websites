@@ -97,7 +97,7 @@ function unwrapLink(link: string): string {
 async function searchJobs(excludeLinks: string[] = []) {
   if (aiInstances.length === 0) {
     console.warn("No API keys configured. Cannot search for jobs.");
-    return [];
+    return { verifiedJobs: [], rejections: { expired: 0, location: 0, role: 0, bot: 0, total: 0 } };
   }
 
   const prompt = `Search for 10 UNIQUE and RECENT job listings in London that match these criteria:
@@ -126,7 +126,7 @@ WEST_LONDON: [true or false]
 
   if (!searchResponse || !searchResponse.text || searchResponse.text.length < 50) {
     console.warn("Gemini search failed or returned too little data.");
-    return [];
+    return { verifiedJobs: [], rejections: { expired: 0, location: 0, role: 0, bot: 0, total: 0 } };
   }
   return parseJobs(searchResponse.text);
 }
@@ -573,6 +573,7 @@ export async function runDailyJob() {
   const seenLinks: string[] = [];
   const NUM_SEARCH_BATCHES = 4;
   const globalRejections = { expired: 0, location: 0, role: 0, bot: 0, total: 0 };
+  let allJobs: any[] = [];
 
   for (let batch = 1; batch <= NUM_SEARCH_BATCHES; batch++) {
     console.log(`\n--- Searching for Jobs (Search ${batch}/${NUM_SEARCH_BATCHES}) ---`);
