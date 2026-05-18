@@ -27,8 +27,8 @@ const NODE_CONTENT = {
   gpu: {
     title: "Projects",
     subtitle: "Heavy Rendering",
-    text1: "Currently focused on building high-margin B2B infrastructures. My output is transforming a BTEC qualification into a multi-million-pound enterprise.",
-    text2: "Instead of just being a landlord, I am building a Cloud Solutions Consultancy (my own mini-Accenture) helping SMBs optimize operations.",
+    text1: "I focus on building practical, cloud-native solutions and automation tools. In my ritvik-pycloud-projects repository, you'll find various projects demonstrating my skills in Python and AWS.",
+    text2: "These projects range from automated cloud workflows to infrastructure-as-code implementations, showcasing how I apply my cloud architecture knowledge to solve real-world problems.",
     stats: [],
     links: [
       { label: "GITHUB REPOSITORY", url: "https://github.com/Ritvik-exe", icon: "arrow_forward" },
@@ -38,8 +38,8 @@ const NODE_CONTENT = {
   ssd: {
     title: "Certifications",
     subtitle: "Long-term Storage",
-    text1: "I am aggressively accumulating technical leverage. I am fully certified as an AWS Solutions Architect Associate, an AWS Cloud Practitioner, and hold a Python PCEP certification.",
-    text2: "Having conquered the AWS Solutions Architect Associate (SAA-C03) certification, my current priority is leveraging this architectural knowledge to engineer high-availability cloud infrastructures.",
+    text1: "I enjoy continuously learning and expanding my skill set in cloud computing. I am certified as an AWS Solutions Architect Associate, an AWS Cloud Practitioner, and hold a Python PCEP certification.",
+    text2: "Achieving my AWS Solutions Architect Associate (SAA-C03) certification has been a great milestone, and I look forward to using this knowledge to engineer scalable and secure cloud infrastructures.",
     stats: [
       { icon: GraduationCap, text: "AWS SAA" },
       { icon: GraduationCap, text: "AWS Practitioner" },
