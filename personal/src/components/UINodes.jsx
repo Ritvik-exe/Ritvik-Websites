@@ -38,14 +38,16 @@ const NODE_CONTENT = {
   ssd: {
     title: "Certifications",
     subtitle: "Long-term Storage",
-    text1: "I am aggressively accumulating technical leverage. I am fully certified as an AWS Cloud Practitioner and hold a Python PCEP certification.",
-    text2: "My current priority is grinding through the final 30% of the AWS Solutions Architect Associate (SAA) certification.",
+    text1: "I am aggressively accumulating technical leverage. I am fully certified as an AWS Solutions Architect Associate, an AWS Cloud Practitioner, and hold a Python PCEP certification.",
+    text2: "Having conquered the AWS Solutions Architect Associate (SAA-C03) certification, my current priority is leveraging this architectural knowledge to engineer high-availability cloud infrastructures.",
     stats: [
+      { icon: GraduationCap, text: "AWS SAA" },
       { icon: GraduationCap, text: "AWS Practitioner" },
       { icon: GraduationCap, text: "Python PCEP" }
     ],
     links: [
-      { label: "CREDLY // AWS BADGE", url: "https://www.credly.com/badges/2ad08a7c-dafc-42c8-9519-21cd5297103b/public_url", icon: "workspace_premium" },
+      { label: "CREDLY // AWS SAA BADGE", url: "https://www.credly.com/badges/c58e7f91-1a1d-4632-bcc5-b2da1f37d866/public_url", icon: "workspace_premium" },
+      { label: "CREDLY // AWS CP BADGE", url: "https://www.credly.com/badges/2ad08a7c-dafc-42c8-9519-21cd5297103b/public_url", icon: "workspace_premium" },
       { label: "CREDLY // PYTHON BADGE", url: "https://www.credly.com/badges/a241065d-0c48-4062-803c-39227e52f7ba/public_url", icon: "workspace_premium" }
     ]
   },
