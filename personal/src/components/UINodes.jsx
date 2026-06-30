@@ -6,7 +6,7 @@ const NODE_CONTENT = {
   cpu: {
     title: "About Me",
     subtitle: "The Core",
-    text1: "I am a 19-year-old Cloud Architecture student based in Isleworth, London. I am rooted in the discipline of the Bhagavad Gita and driven by a 'voluntary hardship' mindset inspired by David Goggins.",
+    text1: "I am a 20-year-old Cloud Architecture student based in Isleworth, London. I am rooted in the discipline of the Bhagavad Gita and driven by a 'voluntary hardship' mindset inspired by David Goggins.",
     text2: "I judge myself by my daily task-book, not my feelings. My ultimate goal is total freedom—building systems that work for me so I can work by choice, not necessity.",
     stats: [
       { icon: MapPin, text: "London, UK" },
@@ -65,8 +65,19 @@ const NODE_CONTENT = {
     text1: "The 7-Year Plan is in motion: From grinding out free local Cloud Audits today, to hiring a CEO by age 26 so I can transition from Operator to Chairman.",
     text2: "I plan to build a business that funds a diversified investment portfolio, replacing my salary with business profit to live a high-margin, automated life.",
     stats: [],
+    links: []
+  },
+  case: {
+    title: "Socials",
+    subtitle: "The Chassis",
+    text1: "Follow me on my socials!",
+    text2: "Feel free to connect, follow my journey, and see what I'm currently working on.",
+    stats: [],
     links: [
-      { label: "LINKEDIN CONNECT", url: "https://www.linkedin.com/in/ritvik-yalala/", icon: "link" }
+      { label: "LINKEDIN", url: "https://www.linkedin.com/in/ritvik-yalala/", icon: "link" },
+      { label: "YOUTUBE", url: "https://www.youtube.com/@RitvikBuilds", icon: "play_arrow" },
+      { label: "INSTAGRAM", url: "https://www.instagram.com/ritvikbuilds/?hl=en", icon: "photo_camera" },
+      { label: "TIKTOK", url: "https://www.tiktok.com/@ritvikbuilds", icon: "music_note" }
     ]
   }
 };

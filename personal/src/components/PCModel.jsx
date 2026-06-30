@@ -9,7 +9,8 @@ export const HOTSPOT_POSITIONS = {
   ram: [0.5, 0, -0.2],     // G.SKILL RAM sticks
   ssd: [0.8, -0.7, -1.1],     // Bottom shroud
   mobo: [0.5, -0.4, -1.35],    // Motherboard center/chipset
-  psu: [-0.8, -2.6, -1.55]      // PSU basement
+  psu: [-0.8, -2.6, -1.55],     // PSU basement
+  case: [0.5, 1.2, -0.5]       // Case exterior
 };
 
 function Model() {
@@ -40,6 +41,7 @@ function Hotspot({ position, id, label, sub, onClick, lineClass, panelClass }) {
       case 'ram': return 'fitness_center'; // Hobbies
       case 'gpu': return 'rocket_launch'; // Projects
       case 'psu': return 'bolt'; // Career Vision
+      case 'case': return 'share'; // Socials
       default: return 'memory';
     }
   };
@@ -139,6 +141,15 @@ export default function PCModel({ setActiveNode }) {
           onClick={setActiveNode}
           lineClass="w-32 -rotate-[0deg] top-0 left-0"
           panelClass="-bottom-4 left-32"
+        />
+        <Hotspot
+          position={HOTSPOT_POSITIONS.case}
+          id="case"
+          label="CASE"
+          sub="Socials"
+          onClick={setActiveNode}
+          lineClass="w-32 -rotate-[45deg] top-0 left-0"
+          panelClass="-top-24 left-16"
         />
       </Suspense>
     </>

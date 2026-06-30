@@ -54,7 +54,8 @@ export default function App() {
             { id: 'gpu', icon: 'rocket_launch', label: 'Projects' },
             { id: 'ssd', icon: 'workspace_premium', label: 'Certifications' },
             { id: 'ram', icon: 'fitness_center', label: 'Hobbies' },
-            { id: 'psu', icon: 'bolt', label: 'Career Vision' }
+            { id: 'psu', icon: 'bolt', label: 'Career Vision' },
+            { id: 'case', icon: 'share', label: 'Socials' }
           ].map((item) => (
           <div key={item.id} onClick={() => setActiveNode(item.id)} className={`px-8 py-4 flex items-center justify-between cursor-pointer transition-all group ${activeNode === item.id ? 'text-cyan-400 border-r-2 border-cyan-400 bg-cyan-400/5' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'}`}>
               <div className="flex items-center gap-4">
@@ -84,7 +85,8 @@ export default function App() {
               { id: 'gpu', icon: 'rocket_launch', label: 'Projects' },
               { id: 'ssd', icon: 'workspace_premium', label: 'Certs' },
               { id: 'ram', icon: 'fitness_center', label: 'Hobbies' },
-              { id: 'psu', icon: 'bolt', label: 'Vision' }
+              { id: 'psu', icon: 'bolt', label: 'Vision' },
+              { id: 'case', icon: 'share', label: 'Socials' }
             ].map((item) => (
               <button key={item.id} className={`min-w-[90px] p-4 rounded-lg flex flex-col items-center justify-center gap-2 ${activeNode === item.id ? 'bg-secondary/20 shadow-[0_0_15px_#00f1fe] border border-secondary/50' : 'glass-panel'}`} onClick={() => setActiveNode(item.id)}>
                 <span className={`material-symbols-outlined text-sm ${activeNode === item.id ? 'text-secondary' : 'text-zinc-500'}`}>{item.icon}</span>
