@@ -15,14 +15,14 @@ const NODE_CONTENT = {
     links: []
   },
   mobo: {
-    title: "Tech Stack",
+    title: "Busynes",
     subtitle: "The Foundation",
-    text1: "I enjoy the strict logic of Python and the infinite scale of the Cloud, making massive systems work efficiently.",
-    text2: "My tech foundation encompasses AWS architecture, Python development, and bringing extreme automation to the forefront of cloud engineering.",
-    stats: [
-      { icon: Code, text: "Python / AWS" }
-    ],
-    links: []
+    text1: "Busynes is a SaaS that helps businesses with the operational and logistics side of the business by automating boring and repetitive tasks.",
+    text2: "V1 is out and I've built an invoice calculator which calculates the total of the invoices sent and emails you today's total and month's total.",
+    stats: [],
+    links: [
+      { label: "BUSYNES.COM", url: "https://busynes.com/", icon: "arrow_forward" }
+    ]
   },
   gpu: {
     title: "Projects",

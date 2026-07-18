@@ -36,7 +36,7 @@ function Hotspot({ position, id, label, sub, onClick, lineClass, panelClass }) {
   const getIcon = () => {
     switch (id) {
       case 'cpu': return 'person'; // About Me
-      case 'mobo': return 'developer_board'; // Tech Stack
+      case 'mobo': return 'developer_board'; // Busynes
       case 'ssd': return 'workspace_premium'; // Certifications
       case 'ram': return 'fitness_center'; // Hobbies
       case 'gpu': return 'rocket_launch'; // Projects
@@ -101,7 +101,7 @@ export default function PCModel({ setActiveNode }) {
           position={HOTSPOT_POSITIONS.mobo}
           id="mobo"
           label="MOBO"
-          sub="Tech Stack"
+          sub="Busynes"
           onClick={setActiveNode}
           lineClass="w-24 -rotate-[180deg] top-0 right-0"
           panelClass="-top-6 -left-[160px]"

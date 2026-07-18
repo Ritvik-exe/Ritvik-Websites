@@ -50,7 +50,7 @@ export default function App() {
         <div className="flex-1 overflow-y-auto w-full custom-scrollbar">
           {[
             { id: 'cpu', icon: 'person', label: 'About Me' },
-            { id: 'mobo', icon: 'developer_board', label: 'Tech Stack' },
+            { id: 'mobo', icon: 'developer_board', label: 'Busynes' },
             { id: 'gpu', icon: 'rocket_launch', label: 'Projects' },
             { id: 'ssd', icon: 'workspace_premium', label: 'Certifications' },
             { id: 'ram', icon: 'fitness_center', label: 'Hobbies' },
