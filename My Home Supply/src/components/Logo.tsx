@@ -1,4 +1,5 @@
 import React from 'react';
+import copperLogo from '../assets/images/copper_logo_1785650850837.jpg';
 
 interface LogoProps {
   className?: string;
@@ -6,7 +7,7 @@ interface LogoProps {
   showText?: boolean;
 }
 
-const USER_COPPER_LOGO = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHQ8PoIER_pQ1RWzZQq3lwS1bMJBRibel2UO6Al8ri159W1etxV-6VQnhfw-2zneHy4VhaChTRCNuR_Ka8NuMxuUJATSHXqGX06hln96ijji8U0MgsFzQG5EDFTv8wtkvDWZcvjJLOyMQloxzol1nKRup403YkoETwl4y4_3MyP_sMkficy5PxL87q16uKbyNOrOYyi_TUNyCQWm2VyTwfqSmc0LmwlGVrgluGAOCCpKZWwPo2yR3eTn0JqObfaw8o9w';
+const USER_COPPER_LOGO = copperLogo;
 
 export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', showText = false }) => {
   const sizeClasses = {
