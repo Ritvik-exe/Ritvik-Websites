@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Manrope', sans-serif;
+    background-color: #eee0d7;
+    color: #211a15;
+  }
+  
+  h1, h2, h3, h4, h5, h6, .font-eb-garamond {
+    font-family: 'EB Garamond', serif;
+  }
+}
+
+.font-manrope {
+  font-family: 'Manrope', sans-serif;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.btn-copper {
+  background: linear-gradient(135deg, #d97a5b 0%, #b55c3f 50%, #8c3b1e 100%);
+  box-shadow: 0 4px 12px rgba(181, 92, 63, 0.3);
+  border: 1px solid #d97a5b;
+}
+
+.btn-copper:hover {
+  background: linear-gradient(135deg, #e08769 0%, #c26547 50%, #994122 100%);
+  box-shadow: 0 6px 16px rgba(181, 92, 63, 0.4);
+}
+
+.copper-gradient {
+  background: linear-gradient(135deg, #d97a5b 0%, #b55c3f 50%, #8c3b1e 100%);
+  border: 1px solid #d97a5b;
+}
+
+.copper-text {
+  background: linear-gradient(135deg, #e08769 0%, #b55c3f 50%, #7d3217 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.copper-glow {
+  box-shadow: 0 0 16px 4px rgba(181, 92, 63, 0.25);
+}
+
+.glass-panel-light {
+  background: #ffffff;
+  border: 1px solid #d8c3b4;
+}
+
+.editorial-input-light {
+  background: #ffffff;
+  border: 1px solid #d8c3b4;
+  border-radius: 0.25rem;
+  padding: 0.75rem 1rem;
+  color: #211a15;
+}
+
+.editorial-input-light:focus {
+  border-color: #a65836;
+  outline: none;
+  box-shadow: 0 0 0 1px #a65836;
+}
+
