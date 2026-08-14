@@ -1,5 +1,5 @@
 import React from 'react';
-import copperLogo from '../assets/images/copper_logo_1785650850837.jpg';
+import copperLogo from '../assets/images/my_home_copper_logo.png';
 
 interface LogoProps {
   className?: string;
