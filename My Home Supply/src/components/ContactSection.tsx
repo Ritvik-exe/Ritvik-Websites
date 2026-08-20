@@ -11,6 +11,7 @@ export const ContactSection: React.FC = () => {
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [copiedType, setCopiedType] = useState<'phone' | 'email' | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +22,18 @@ export const ContactSection: React.FC = () => {
       setLoading(false);
       setSubmitted(true);
     }, 600);
+  };
+
+  const handleCopy = (text: string, type: 'phone' | 'email', e: React.MouseEvent) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedType(type);
+      setTimeout(() => {
+        setCopiedType(null);
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy text: ', err);
+    });
   };
 
   return (
@@ -60,9 +73,30 @@ export const ContactSection: React.FC = () => {
                     <h4 className="font-manrope text-xs uppercase font-bold text-[#857467] mb-1">
                       Phone
                     </h4>
-                    <a href="tel:07774628233" className="font-manrope text-base text-[#211a15] hover:text-[#b55c3f] transition-colors cursor-pointer block">
-                      07774 628233
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <a 
+                        href="tel:07774628233" 
+                        onClick={(e) => handleCopy('07774 628233', 'phone', e)}
+                        className="font-manrope text-base text-[#211a15] hover:text-[#b55c3f] transition-colors cursor-pointer block"
+                        title="Click to copy phone number"
+                      >
+                        07774 628233
+                      </a>
+                      <button
+                        onClick={(e) => handleCopy('07774 628233', 'phone', e)}
+                        className="text-[#857467]/60 hover:text-[#b55c3f] transition-all cursor-pointer flex items-center justify-center p-0.5 hover:bg-[#b55c3f]/5 rounded"
+                        title="Copy to clipboard"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          {copiedType === 'phone' ? 'check' : 'content_copy'}
+                        </span>
+                      </button>
+                      {copiedType === 'phone' && (
+                        <span className="text-xs text-emerald-600 font-manrope font-semibold animate-pulse ml-1">
+                          Copied!
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -77,9 +111,30 @@ export const ContactSection: React.FC = () => {
                     <h4 className="font-manrope text-xs uppercase font-bold text-[#857467] mb-1">
                       Email
                     </h4>
-                    <a href="mailto:anil.yalala@myhomesupply.co.uk" className="font-manrope text-base text-[#211a15] hover:text-[#b55c3f] transition-colors cursor-pointer block">
-                      anil.yalala@myhomesupply.co.uk
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <a 
+                        href="mailto:info@myhomesupply.co.uk" 
+                        onClick={(e) => handleCopy('info@myhomesupply.co.uk', 'email', e)}
+                        className="font-manrope text-base text-[#211a15] hover:text-[#b55c3f] transition-colors cursor-pointer block"
+                        title="Click to copy email address"
+                      >
+                        info@myhomesupply.co.uk
+                      </a>
+                      <button
+                        onClick={(e) => handleCopy('info@myhomesupply.co.uk', 'email', e)}
+                        className="text-[#857467]/60 hover:text-[#b55c3f] transition-all cursor-pointer flex items-center justify-center p-0.5 hover:bg-[#b55c3f]/5 rounded"
+                        title="Copy to clipboard"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          {copiedType === 'email' ? 'check' : 'content_copy'}
+                        </span>
+                      </button>
+                      {copiedType === 'email' && (
+                        <span className="text-xs text-emerald-600 font-manrope font-semibold animate-pulse ml-1">
+                          Copied!
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
