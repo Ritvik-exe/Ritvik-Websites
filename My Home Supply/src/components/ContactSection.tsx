@@ -13,15 +13,39 @@ export const ContactSection: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [copiedType, setCopiedType] = useState<'phone' | 'email' | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.firstName || !formData.email || !formData.message) return;
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: '4ab4cfb0-b437-44bc-bdd2-a0a1a1e01048',
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          email: formData.email,
+          subject: `My Home Supply Contact - ${formData.subject}`,
+          message: formData.message,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSubmitted(true);
+      } else {
+        alert(data.message || 'Something went wrong. Please try again.');
+      }
+    } catch (err) {
+      console.error('Form submission error:', err);
+      alert('Failed to submit form. Please check your internet connection and try again.');
+    } finally {
       setLoading(false);
-      setSubmitted(true);
-    }, 600);
+    }
   };
 
   const handleCopy = (text: string, type: 'phone' | 'email', e: React.MouseEvent) => {
