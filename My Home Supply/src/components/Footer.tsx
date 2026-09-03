@@ -15,7 +15,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateContact, onNavigatePri
         <div className="flex flex-col gap-4">
           <Logo size="md" />
           <p className="font-manrope text-xs text-[#d8c3b4] leading-relaxed max-w-xs mt-2">
-            © 2026 My Home Supply. Precision Engineered Luxury. High-end bath fixtures and architectural fittings.
+            © 2026 My Home Supply. High-end bath fixtures and architectural fittings.
           </p>
         </div>
 

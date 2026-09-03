@@ -172,9 +172,9 @@ export const ProductShowcaseSlider: React.FC<ProductShowcaseSliderProps> = ({ on
                   </span>
 
                   {/* Title */}
-                  <h3 className="font-eb-garamond text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-4 leading-[1.1] tracking-tight drop-shadow-md">
+                  <h1 className="font-eb-garamond text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-4 leading-[1.1] tracking-tight drop-shadow-md">
                     {SLIDES[currentIndex].title}
-                  </h3>
+                  </h1>
 
                   {/* Description */}
                   <p className="font-manrope text-xs sm:text-sm md:text-base text-[#eee0d7] mb-8 leading-relaxed max-w-md drop-shadow-sm">

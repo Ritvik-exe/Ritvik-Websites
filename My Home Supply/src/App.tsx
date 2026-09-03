@@ -9,11 +9,15 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { TermsAndConditions } from './components/TermsAndConditions';
 import { PRODUCTS } from './data/products';
 import { ProductCategory, ProductFinish, Product } from './types';
+import { useSEO } from './utils/seo';
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState<'home' | 'privacy' | 'terms' | ProductCategory>('home');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Dynamic SEO management
+  useSEO({ activeCategory, searchQuery });
 
   // Show Toast Notification
   const showToast = (msg: string) => {
