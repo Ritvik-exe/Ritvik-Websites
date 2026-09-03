@@ -21,25 +21,53 @@
 }
 
 .btn-copper {
-  background: linear-gradient(135deg, #d97a5b 0%, #b55c3f 50%, #8c3b1e 100%);
-  box-shadow: 0 4px 12px rgba(181, 92, 63, 0.3);
-  border: 1px solid #d97a5b;
+  background: linear-gradient(
+    115deg,
+    #a64d2f 0%,
+    #d67a5b 35%,
+    #e59b7e 48%,
+    #b55c3f 52%,
+    #8a351a 85%,
+    #6e240c 100%
+  );
+  background-size: 200% auto;
+  box-shadow: 0 4px 12px rgba(139, 53, 28, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid #df876b;
+  transition: all 0.3s ease;
 }
 
 .btn-copper:hover {
-  background: linear-gradient(135deg, #e08769 0%, #c26547 50%, #994122 100%);
-  box-shadow: 0 6px 16px rgba(181, 92, 63, 0.4);
+  background-position: right center;
+  box-shadow: 0 6px 18px rgba(139, 53, 28, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.25);
 }
 
 .copper-gradient {
-  background: linear-gradient(135deg, #d97a5b 0%, #b55c3f 50%, #8c3b1e 100%);
-  border: 1px solid #d97a5b;
+  background: linear-gradient(
+    115deg,
+    #a64d2f 0%,
+    #d67a5b 35%,
+    #e59b7e 48%,
+    #b55c3f 52%,
+    #8a351a 85%,
+    #6e240c 100%
+  );
+  border: 1px solid #df876b;
 }
 
 .copper-text {
-  background: linear-gradient(135deg, #e08769 0%, #b55c3f 50%, #7d3217 100%);
+  background: linear-gradient(
+    115deg,
+    #8a351a 0%,
+    #c96e4f 35%,
+    #e59b7e 48%,
+    #b55c3f 55%,
+    #8a351a 80%,
+    #5c1b06 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
 }
 
 .copper-glow {
@@ -64,4 +92,14 @@
   outline: none;
   box-shadow: 0 0 0 1px #a65836;
 }
+
+@keyframes zoomOut {
+  0% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1.01);
+  }
+}
+
 

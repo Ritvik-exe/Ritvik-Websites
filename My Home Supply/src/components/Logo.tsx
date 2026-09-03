@@ -1,15 +1,12 @@
 import React from 'react';
-import copperLogo from '../assets/images/my_home_copper_logo.png';
+import logoImg from '../assets/images/my_home_logo.png';
 
 interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
-  showText?: boolean;
 }
 
-const USER_COPPER_LOGO = copperLogo;
-
-export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', showText = false }) => {
+export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
   const sizeClasses = {
     sm: 'h-10 sm:h-11',
     md: 'h-12 sm:h-14',
@@ -19,16 +16,10 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', showTex
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <img
-        src={USER_COPPER_LOGO}
-        alt="My Home Supply Copper Logo"
-        referrerPolicy="no-referrer"
-        className={`${sizeClasses[size]} w-auto object-contain mix-blend-multiply transition-transform duration-300 hover:scale-105 select-none shrink-0`}
+        src={logoImg}
+        alt="My Home Supply Logo"
+        className={`${sizeClasses[size]} w-auto object-contain transition-transform duration-300 hover:scale-105 select-none shrink-0`}
       />
-      {showText && (
-        <span className="font-eb-garamond text-xl sm:text-2xl font-bold tracking-tight text-[#b55c3f]">
-          My Home Supply
-        </span>
-      )}
     </div>
   );
 };

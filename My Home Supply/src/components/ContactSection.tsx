@@ -2,62 +2,62 @@ import React, { useState } from 'react';
 
 export const ContactSection: React.FC = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
-    subject: 'general',
+    subject: 'General Inquiry',
     message: '',
   });
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [copiedType, setCopiedType] = useState<'phone' | 'email' | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.firstName || !formData.email || !formData.message) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          access_key: '4ab4cfb0-b437-44bc-bdd2-a0a1a1e01048',
-          name: `${formData.firstName} ${formData.lastName}`.trim(),
-          email: formData.email,
-          subject: `My Home Supply Contact - ${formData.subject}`,
-          message: formData.message,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setSubmitted(true);
-      } else {
-        alert(data.message || 'Something went wrong. Please try again.');
-      }
-    } catch (err) {
-      console.error('Form submission error:', err);
-      alert('Failed to submit form. Please check your internet connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCopy = (text: string, type: 'phone' | 'email', e: React.MouseEvent) => {
     e.preventDefault();
     navigator.clipboard.writeText(text).then(() => {
       setCopiedType(type);
-      setTimeout(() => {
-        setCopiedType(null);
-      }, 2000);
+      setTimeout(() => setCopiedType(null), 2000);
     }).catch(err => {
       console.error('Failed to copy text: ', err);
     });
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) return;
+
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: '4ab4cfb0-b437-44bc-bdd2-a0a1a1e01048',
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject || 'New Inquiry from My Home Supply Website',
+          message: formData.message,
+          from_name: 'My Home Supply Contact Form',
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setSubmitted(true);
+      } else {
+        setErrorMessage(result.message || 'There was an issue sending your message. Please try again.');
+      }
+    } catch (err) {
+      setErrorMessage('Network error occurred. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,7 +68,7 @@ export const ContactSection: React.FC = () => {
           <span className="font-manrope text-xs font-bold text-[#b55c3f] uppercase tracking-widest block mb-3">
             Get in Touch
           </span>
-          <h2 className="font-eb-garamond text-3xl sm:text-4xl md:text-5xl font-bold text-[#211a15] mb-4 leading-tight max-w-4xl">
+          <h2 className="font-eb-garamond text-3xl sm:text-4xl md:text-5xl font-bold copper-text pb-1 mb-4 leading-tight max-w-4xl">
             We're here to help you craft your perfect space.
           </h2>
           <p className="font-manrope text-base sm:text-lg text-[#524439] max-w-2xl leading-relaxed">
@@ -82,83 +82,63 @@ export const ContactSection: React.FC = () => {
           <div className="xl:col-span-5 flex flex-col gap-8">
             <div className="p-8 sm:p-10 rounded-2xl flex flex-col justify-between h-full shadow-md bg-white border border-[#d8c3b4]">
               <div>
-                <h3 className="font-eb-garamond text-2xl sm:text-3xl font-bold text-[#211a15] mb-8">
+                <h3 className="font-eb-garamond text-2xl sm:text-3xl font-bold copper-text pb-1 mb-8">
                   Contact Information
                 </h3>
 
                 {/* Phone */}
-                <div className="flex items-start gap-5 mb-8 group">
+                <div 
+                  onClick={(e) => handleCopy('07774 628233', 'phone', e)}
+                  className="flex items-start gap-5 mb-8 group cursor-pointer"
+                  title="Click to copy phone number"
+                >
                   <div className="w-10 h-10 rounded-full bg-[#b55c3f]/10 flex items-center justify-center shrink-0 group-hover:bg-[#b55c3f]/20 transition-colors">
                     <span className="material-symbols-outlined text-[#b55c3f] transition-transform group-hover:scale-110">
                       phone
                     </span>
                   </div>
                   <div>
-                    <h4 className="font-manrope text-xs uppercase font-bold text-[#857467] mb-1">
-                      Phone
-                    </h4>
-                    <div className="flex items-center gap-2">
-                      <a 
-                        href="tel:07774628233" 
-                        onClick={(e) => handleCopy('07774 628233', 'phone', e)}
-                        className="font-manrope text-base text-[#211a15] hover:text-[#b55c3f] transition-colors cursor-pointer block"
-                        title="Click to copy phone number"
-                      >
-                        07774 628233
-                      </a>
-                      <button
-                        onClick={(e) => handleCopy('07774 628233', 'phone', e)}
-                        className="text-[#857467]/60 hover:text-[#b55c3f] transition-all cursor-pointer flex items-center justify-center p-0.5 hover:bg-[#b55c3f]/5 rounded"
-                        title="Copy to clipboard"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">
-                          {copiedType === 'phone' ? 'check' : 'content_copy'}
-                        </span>
-                      </button>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-manrope text-xs uppercase font-bold text-[#857467]">
+                        Phone
+                      </h4>
                       {copiedType === 'phone' && (
-                        <span className="text-xs text-emerald-600 font-manrope font-semibold animate-pulse ml-1">
-                          Copied!
+                        <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-sm px-1.5 py-0.2 font-bold uppercase tracking-wider animate-fadeIn">
+                          Copied to Clipboard!
                         </span>
                       )}
                     </div>
+                    <span className="font-manrope text-base text-[#211a15] group-hover:text-[#b55c3f] transition-colors block font-semibold">
+                      07774 628233
+                    </span>
                   </div>
                 </div>
 
                 {/* Email */}
-                <div className="flex items-start gap-5 group">
+                <div 
+                  onClick={(e) => handleCopy('info@myhomesupply.co.uk', 'email', e)}
+                  className="flex items-start gap-5 group cursor-pointer"
+                  title="Click to copy email address"
+                >
                   <div className="w-10 h-10 rounded-full bg-[#b55c3f]/10 flex items-center justify-center shrink-0 group-hover:bg-[#b55c3f]/20 transition-colors">
                     <span className="material-symbols-outlined text-[#b55c3f] transition-transform group-hover:scale-110">
                       mail
                     </span>
                   </div>
                   <div>
-                    <h4 className="font-manrope text-xs uppercase font-bold text-[#857467] mb-1">
-                      Email
-                    </h4>
-                    <div className="flex items-center gap-2">
-                      <a 
-                        href="mailto:info@myhomesupply.co.uk" 
-                        onClick={(e) => handleCopy('info@myhomesupply.co.uk', 'email', e)}
-                        className="font-manrope text-base text-[#211a15] hover:text-[#b55c3f] transition-colors cursor-pointer block"
-                        title="Click to copy email address"
-                      >
-                        info@myhomesupply.co.uk
-                      </a>
-                      <button
-                        onClick={(e) => handleCopy('info@myhomesupply.co.uk', 'email', e)}
-                        className="text-[#857467]/60 hover:text-[#b55c3f] transition-all cursor-pointer flex items-center justify-center p-0.5 hover:bg-[#b55c3f]/5 rounded"
-                        title="Copy to clipboard"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">
-                          {copiedType === 'email' ? 'check' : 'content_copy'}
-                        </span>
-                      </button>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-manrope text-xs uppercase font-bold text-[#857467]">
+                        Email
+                      </h4>
                       {copiedType === 'email' && (
-                        <span className="text-xs text-emerald-600 font-manrope font-semibold animate-pulse ml-1">
-                          Copied!
+                        <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-sm px-1.5 py-0.2 font-bold uppercase tracking-wider animate-fadeIn">
+                          Copied to Clipboard!
                         </span>
                       )}
                     </div>
+                    <span className="font-manrope text-base text-[#211a15] group-hover:text-[#b55c3f] transition-colors block font-semibold break-all">
+                      info@myhomesupply.co.uk
+                    </span>
                   </div>
                 </div>
               </div>
@@ -194,20 +174,19 @@ export const ContactSection: React.FC = () => {
                   <div className="w-16 h-16 rounded-full bg-[#b55c3f]/10 text-[#b55c3f] flex items-center justify-center mx-auto mb-4">
                     <span className="material-symbols-outlined text-4xl">check_circle</span>
                   </div>
-                  <h3 className="font-eb-garamond text-3xl font-bold text-[#211a15]">
+                  <h3 className="font-eb-garamond text-3xl font-bold copper-text pb-1">
                     Message Received
                   </h3>
                   <p className="font-manrope text-sm text-[#524439] max-w-md mx-auto mt-2">
-                    Thank you, {formData.firstName}. Our architectural design team has received your message and will respond within 24 business hours.
+                    Thank you{formData.name ? `, ${formData.name}` : ''}. Our architectural design team has received your message and will respond within 24 business hours.
                   </p>
                   <button
                     onClick={() => {
                       setSubmitted(false);
                       setFormData({
-                        firstName: '',
-                        lastName: '',
+                        name: '',
                         email: '',
-                        subject: 'general',
+                        subject: 'General Inquiry',
                         message: '',
                       });
                     }}
@@ -217,50 +196,52 @@ export const ContactSection: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form 
+                  action="https://api.web3forms.com/submit" 
+                  method="POST"
+                  onSubmit={handleSubmit} 
+                  className="space-y-6"
+                >
+                  <input type="hidden" name="access_key" value="4ab4cfb0-b437-44bc-bdd2-a0a1a1e01048" />
+                  <input type="hidden" name="from_name" value="My Home Supply Contact Form" />
+
+                  {errorMessage && (
+                    <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm font-manrope">
+                      {errorMessage}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="firstName" className="font-manrope text-xs font-bold text-[#857467] block mb-2 uppercase tracking-wider">
-                        First Name *
+                      <label htmlFor="name" className="font-manrope text-xs font-bold text-[#857467] block mb-2 uppercase tracking-wider">
+                        Your Name *
                       </label>
                       <input
-                        id="firstName"
+                        id="name"
+                        name="name"
                         type="text"
                         required
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        placeholder="Jane"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Jane Doe"
                         className="w-full editorial-input-light font-manrope text-base transition-colors"
                       />
                     </div>
                     <div>
-                      <label htmlFor="lastName" className="font-manrope text-xs font-bold text-[#857467] block mb-2 uppercase tracking-wider">
-                        Last Name
+                      <label htmlFor="email" className="font-manrope text-xs font-bold text-[#857467] block mb-2 uppercase tracking-wider">
+                        Email Address *
                       </label>
                       <input
-                        id="lastName"
-                        type="text"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        placeholder="Doe"
+                        id="email"
+                        name="email"
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="jane@example.com"
                         className="w-full editorial-input-light font-manrope text-base transition-colors"
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="email" className="font-manrope text-xs font-bold text-[#857467] block mb-2 uppercase tracking-wider">
-                      Email Address *
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="jane@example.com"
-                      className="w-full editorial-input-light font-manrope text-base transition-colors"
-                    />
                   </div>
 
                   <div>
@@ -270,14 +251,15 @@ export const ContactSection: React.FC = () => {
                     <div className="relative">
                       <select
                         id="subject"
+                        name="subject"
                         value={formData.subject}
                         onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                         className="w-full editorial-input-light font-manrope text-base transition-colors cursor-pointer appearance-none pr-10"
                       >
-                        <option value="general">General Inquiry</option>
-                        <option value="sales">Sales & Product Info</option>
-                        <option value="support">Order Support</option>
-                        <option value="trade">Trade Account Inquiry</option>
+                        <option value="General Inquiry">General Inquiry</option>
+                        <option value="Sales & Product Info">Sales & Product Info</option>
+                        <option value="Order Support">Order Support</option>
+                        <option value="Trade Account Inquiry">Trade Account Inquiry</option>
                       </select>
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#b55c3f]">
                         <span className="material-symbols-outlined">expand_more</span>
@@ -291,6 +273,7 @@ export const ContactSection: React.FC = () => {
                     </label>
                     <textarea
                       id="message"
+                      name="message"
                       rows={4}
                       required
                       value={formData.message}
@@ -304,7 +287,7 @@ export const ContactSection: React.FC = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="btn-copper text-white font-manrope text-xs font-bold uppercase tracking-widest px-8 py-4 rounded-sm transition-all duration-300 flex items-center gap-3 justify-center w-full md:w-auto cursor-pointer hover:scale-105 active:scale-95 shadow-lg group"
+                      className="btn-copper text-white font-manrope text-xs font-bold uppercase tracking-widest px-8 py-4 rounded-sm transition-all duration-300 flex items-center gap-3 justify-center w-full md:w-auto cursor-pointer hover:scale-105 active:scale-95 shadow-lg group disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <span>Sending Message...</span>
@@ -327,3 +310,4 @@ export const ContactSection: React.FC = () => {
     </section>
   );
 };
+

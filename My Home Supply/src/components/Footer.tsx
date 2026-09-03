@@ -3,35 +3,20 @@ import { Logo } from './Logo';
 
 interface FooterProps {
   onNavigateContact: () => void;
-  onOpenCatalog: () => void;
+  onNavigatePrivacy: () => void;
+  onNavigateTerms: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigateContact, onOpenCatalog }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigateContact, onNavigatePrivacy, onNavigateTerms }) => {
   return (
     <footer className="w-full bg-[#211a15] text-[#eee0d7] border-t border-[#372f29] mt-auto">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12 px-6 sm:px-10 py-16 max-w-[1280px] mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 px-6 sm:px-10 py-16 max-w-[1280px] mx-auto">
         {/* Brand Column */}
         <div className="flex flex-col gap-4">
           <Logo size="md" />
           <p className="font-manrope text-xs text-[#d8c3b4] leading-relaxed max-w-xs mt-2">
             © 2026 My Home Supply. Precision Engineered Luxury. High-end bath fixtures and architectural fittings.
           </p>
-        </div>
-
-        {/* Customer Care Links */}
-        <div className="flex flex-col gap-3">
-          <h4 className="font-manrope text-xs font-bold text-[#ffb77b] uppercase tracking-widest mb-1">
-            Service & Support
-          </h4>
-          <a href="#shipping" className="font-manrope text-xs text-[#d8c3b4] hover:text-[#ffb77b] transition-colors hover:underline underline-offset-4">
-            Shipping & Dispatch
-          </a>
-          <a href="#returns" className="font-manrope text-xs text-[#d8c3b4] hover:text-[#ffb77b] transition-colors hover:underline underline-offset-4">
-            Returns & Guarantee
-          </a>
-          <a href="#warranty" className="font-manrope text-xs text-[#d8c3b4] hover:text-[#ffb77b] transition-colors hover:underline underline-offset-4">
-            15-Year Warranty Info
-          </a>
         </div>
 
         {/* Company Links */}
@@ -46,14 +31,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateContact, onOpenCatalog
             Contact Us
           </button>
           <button 
-            onClick={onOpenCatalog}
+            onClick={onNavigateTerms}
             className="text-left font-manrope text-xs text-[#d8c3b4] hover:text-[#ffb77b] transition-colors hover:underline underline-offset-4 cursor-pointer"
           >
-            Digital Catalog Download
+            Terms & Conditions
           </button>
-          <a href="#privacy" className="font-manrope text-xs text-[#d8c3b4] hover:text-[#ffb77b] transition-colors hover:underline underline-offset-4">
+          <button 
+            onClick={onNavigatePrivacy}
+            className="text-left font-manrope text-xs text-[#d8c3b4] hover:text-[#ffb77b] transition-colors hover:underline underline-offset-4 cursor-pointer"
+          >
             Privacy Policy
-          </a>
+          </button>
         </div>
 
         {/* Trade Badge */}
